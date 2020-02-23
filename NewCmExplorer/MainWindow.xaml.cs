@@ -166,60 +166,112 @@ namespace NewCmExplorer
 
         private static List<Tuple<PlayerData, Tuple<PositionData, SideData>>> BestLineUpForTactic(TacticData tactic)
         {
-            var bestSquad = new List<Tuple<PlayerData, Tuple<PositionData, SideData>>>();
+            var bestLineUp = new List<Tuple<PlayerData, Tuple<PositionData, SideData>>>();
 
+            // Assumes the selected goalkeeper can't be a better choice at another position.
+            // The side is useless here.
             PlayerData gkPlayer = GetSquadBestPlayerByPositionAndSide(DataMapper.Instance.Players, PositionData.GK, SideData.C);
-            int maxPower = 0;
-            int card = tactic.Positions.Count;
-            for (int a0 = 0; a0 < card; a0++)
+        
+            List<PlayerData> fullSquadWithoutSelectedGk = new List<PlayerData>(DataMapper.Instance.Players);
+            fullSquadWithoutSelectedGk.Remove(gkPlayer);
+
+            var bestPlayersByPosition = new Dictionary<Tuple<PositionData, SideData>, List<Tuple<PlayerData, int>>>();
+            foreach (Tuple<PositionData, SideData> positionAndSide in tactic.Positions)
             {
-                for (int a1 = 0; a1 < card; a1++)
+                if (bestPlayersByPosition.Keys.Any(k => k.Item1 == positionAndSide.Item1 && k.Item2 == positionAndSide.Item2))
                 {
-                    if (a1 == a0) continue;
-                    for (int a2 = 0; a2 < card; a2++)
+                    continue;
+                }
+                bestPlayersByPosition.Add(positionAndSide, new List<Tuple<PlayerData, int>>());
+                bestPlayersByPosition[positionAndSide].AddRange(
+                    fullSquadWithoutSelectedGk
+                        .Select(p => new Tuple<PlayerData, int>(p,
+                            p.GlobalRate * p.Positions[positionAndSide.Item1] * p.Sides[positionAndSide.Item2]))
+                );
+                bestPlayersByPosition[positionAndSide] = bestPlayersByPosition[positionAndSide].OrderByDescending(tuple => tuple.Item2).ToList();
+            }
+
+            // NB : the line-up rate doesn't include the GK (it's not required).
+            int bestLineUpRate = 0;
+
+            int tacticCardinal = tactic.Positions.Count;
+            for (int a0 = 0; a0 < tacticCardinal; a0++)
+            {
+                for (int a1 = 0; a1 < tacticCardinal; a1++)
+                {
+                    if (a1 == a0)
                     {
-                        if (a2 == a0 || a2 == a1) continue;
-                        for (int a3 = 0; a3 < card; a3++)
+                        continue;
+                    }
+                    for (int a2 = 0; a2 < tacticCardinal; a2++)
+                    {
+                        if (a2 == a0 || a2 == a1)
                         {
-                            if (a3 == a0 || a3 == a1 || a3 == a2) continue;
-                            for (int a4 = 0; a4 < card; a4++)
+                            continue;
+                        }
+                        for (int a3 = 0; a3 < tacticCardinal; a3++)
+                        {
+                            if (a3 == a0 || a3 == a1 || a3 == a2)
                             {
-                                if (a4 == a0 || a4 == a1 || a4 == a2 || a4 == a3) continue;
-                                for (int a5 = 0; a5 < card; a5++)
+                                continue;
+                            }
+                            for (int a4 = 0; a4 < tacticCardinal; a4++)
+                            {
+                                if (a4 == a0 || a4 == a1 || a4 == a2 || a4 == a3)
                                 {
-                                    if (a5 == a0 || a5 == a1 || a5 == a2 || a5 == a3 || a5 == a4) continue;
-                                    for (int a6 = 0; a6 < card; a6++)
+                                    continue;
+                                }
+                                for (int a5 = 0; a5 < tacticCardinal; a5++)
+                                {
+                                    if (a5 == a0 || a5 == a1 || a5 == a2 || a5 == a3 || a5 == a4)
                                     {
-                                        if (a6 == a0 || a6 == a1 || a6 == a2 || a6 == a3 || a6 == a4 || a6 == a5) continue;
-                                        for (int a7 = 0; a7 < card; a7++)
+                                        continue;
+                                    }
+                                    for (int a6 = 0; a6 < tacticCardinal; a6++)
+                                    {
+                                        if (a6 == a0 || a6 == a1 || a6 == a2 || a6 == a3 || a6 == a4 || a6 == a5)
                                         {
-                                            if (a7 == a0 || a7 == a1 || a7 == a2 || a7 == a3 || a7 == a4 || a7 == a5 || a7 == a6) continue;
-                                            for (int a8 = 0; a8 < card; a8++)
+                                            continue;
+                                        }
+                                        for (int a7 = 0; a7 < tacticCardinal; a7++)
+                                        {
+                                            if (a7 == a0 || a7 == a1 || a7 == a2 || a7 == a3 || a7 == a4 || a7 == a5 || a7 == a6)
                                             {
-                                                if (a8 == a0 || a8 == a1 || a8 == a2 || a8 == a3 || a8 == a4 || a8 == a5 || a8 == a6 || a8 == a7) continue;
-                                                for (int a9 = 0; a9 < card; a9++)
+                                                continue;
+                                            }
+                                            for (int a8 = 0; a8 < tacticCardinal; a8++)
+                                            {
+                                                if (a8 == a0 || a8 == a1 || a8 == a2 || a8 == a3 || a8 == a4 || a8 == a5 || a8 == a6 || a8 == a7)
                                                 {
-                                                    if (a9 == a0 || a9 == a1 || a9 == a2 || a9 == a3 || a9 == a4 || a9 == a5 || a9 == a6 || a9 == a7 || a9 == a8) continue;
-                                                    var allA = new List<int> { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9 };
-                                                    List<PlayerData> currentList = new List<PlayerData>(DataMapper.Instance.Players);
-                                                    currentList.Remove(gkPlayer);
-                                                    var squad = new List<Tuple<PlayerData, Tuple<PositionData, SideData>>>();
-                                                    int power = 0;
-                                                    foreach (int a in allA)
+                                                    continue;
+                                                }
+                                                for (int a9 = 0; a9 < tacticCardinal; a9++)
+                                                {
+                                                    if (a9 == a0 || a9 == a1 || a9 == a2 || a9 == a3 || a9 == a4 || a9 == a5 || a9 == a6 || a9 == a7 || a9 == a8)
                                                     {
-                                                        Tuple<PositionData, SideData> currentPos = tactic.Positions.ElementAt(a);
-                                                        PlayerData currentABest = GetSquadBestPlayerByPositionAndSide(currentList, currentPos.Item1, currentPos.Item2);
-                                                        if (currentABest != null)
-                                                        {
-                                                            currentList.Remove(currentABest);
-                                                            power += currentABest.GlobalRate * currentABest.Positions[currentPos.Item1] * currentABest.Sides[currentPos.Item2];
-                                                        }
-                                                        squad.Add(new Tuple<PlayerData, Tuple<PositionData, SideData>>(currentABest, currentPos));
+                                                        continue;
                                                     }
-                                                    if (power > maxPower)
+
+                                                    var currentLineUp = new List<Tuple<PlayerData, Tuple<PositionData, SideData>>>();
+                                                    int currentLineUpRate = 0;
+                                                    foreach (int tacticTupleIndex in new[] { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9 })
                                                     {
-                                                        bestSquad = squad;
-                                                        maxPower = power;
+                                                        Tuple<PositionData, SideData> tacticTuple = tactic.Positions.ElementAt(tacticTupleIndex);
+
+                                                        Tuple<PlayerData, int> bestPlayerForTacticTuple =
+                                                            bestPlayersByPosition[bestPlayersByPosition.Keys.First(k => k.Item1 == tacticTuple.Item1 && k.Item2 == tacticTuple.Item2)]
+                                                            .FirstOrDefault(p => !currentLineUp.Any(lu => lu.Item1 == p.Item1));
+                                                        if (bestPlayerForTacticTuple != null)
+                                                        {
+                                                            currentLineUpRate += bestPlayerForTacticTuple.Item2;
+                                                        }
+                                                        currentLineUp.Add(new Tuple<PlayerData, Tuple<PositionData, SideData>>(bestPlayerForTacticTuple.Item1, tacticTuple));
+                                                    }
+
+                                                    if (currentLineUpRate > bestLineUpRate)
+                                                    {
+                                                        bestLineUp = currentLineUp;
+                                                        bestLineUpRate = currentLineUpRate;
                                                     }
                                                 }
                                             }
@@ -232,8 +284,10 @@ namespace NewCmExplorer
                 }
             }
 
-            bestSquad.Insert(0, new Tuple<PlayerData, Tuple<PositionData, SideData>>(gkPlayer, new Tuple<PositionData, SideData>(PositionData.GK, SideData.C)));
-            return bestSquad;
+            bestLineUp.Insert(0,
+                new Tuple<PlayerData, Tuple<PositionData, SideData>>(gkPlayer,
+                    new Tuple<PositionData, SideData>(PositionData.GK, SideData.C)));
+            return bestLineUp;
         }
 
         private static PlayerData GetSquadBestPlayerByPositionAndSide(IEnumerable<PlayerData> squad, PositionData position, SideData side)
