@@ -4,9 +4,42 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:NewCmExplorer"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
-        
-    </Grid>
+        mc:Ignorable="d" WindowStartupLocation="CenterScreen"
+        Title="MainWindow" SizeToContent="WidthAndHeight">
+    <DockPanel Name="MainPanel" IsEnabled="False" Background="Gainsboro">
+        <StackPanel DockPanel.Dock="Top" Orientation="Vertical" Margin="10">
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Tactic :" Width="75" HorizontalContentAlignment="Right" />
+                <ComboBox Width="200" Name="ComboTactics" SelectionChanged="ComboTactics_SelectionChanged" />
+            </StackPanel>
+            <StackPanel Margin="0, 10, 0, 0" Orientation="Horizontal">
+                <Label Content="Club :" Width="75" HorizontalContentAlignment="Right" />
+                <ComboBox Width="200" Name="ComboClubs" SelectionChanged="ComboClubs_SelectionChanged" />
+            </StackPanel>
+        </StackPanel>
+        <StackPanel Height="30" Orientation="Horizontal" DockPanel.Dock="Bottom" Name="PanelProgress">
+            <ProgressBar Height="20" Width="200" IsIndeterminate="True" />
+        </StackPanel>
+        <DockPanel DockPanel.Dock="Bottom">
+            <Grid DockPanel.Dock="Left" Background="Green" HorizontalAlignment="Center" VerticalAlignment="Center" Name="FieldGrid">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="75" />
+                    <ColumnDefinition Width="75" />
+                    <ColumnDefinition Width="75" />
+                    <ColumnDefinition Width="75" />
+                    <ColumnDefinition Width="75" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="75" />
+                    <RowDefinition Height="75" />
+                    <RowDefinition Height="75" />
+                    <RowDefinition Height="75" />
+                    <RowDefinition Height="75" />
+                    <RowDefinition Height="75" />
+                    <RowDefinition Height="75" />
+                </Grid.RowDefinitions>
+            </Grid>
+            <ListBox DockPanel.Dock="Right" Margin="5" Name="FullStaff" />
+        </DockPanel>
+    </DockPanel>
 </Window>
