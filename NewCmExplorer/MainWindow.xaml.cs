@@ -72,28 +72,36 @@ namespace NewCmExplorer
                 MainPanel.IsEnabled = true;
                 PanelProgress.Visibility = Visibility.Collapsed;
                 FullStaff.Items.Refresh();
-                SetLineUpGrid(e.Result as List<Tuple<PlayerData, Tuple<PositionData, SideData>>>);
+
+                if (e.Error != null)
+                {
+                    MessageBox.Show($"{e.Error.Message}\r\n\r\n{e.Error.StackTrace}");
+                }
+                else if (e.Result != null)
+                {
+                    SetLineUpGrid(e.Result as List<Tuple<PlayerData, KeyValuePair<PositionData, SideData>>>);
+                }
             };
             worker.RunWorkerAsync(new object[] { ComboClubs.SelectedItem, ComboTactics.SelectedItem });
         }
 
-        private void SetLineUpGrid(List<Tuple<PlayerData, Tuple<PositionData, SideData>>> lineUp)
+        private void SetLineUpGrid(List<Tuple<PlayerData, KeyValuePair<PositionData, SideData>>> lineUp)
         {
             FieldGrid.Children.Clear();
-            foreach (Tuple<PlayerData, Tuple<PositionData, SideData>> tuplePlayerWithPos in lineUp)
+            foreach (Tuple<PlayerData, KeyValuePair<PositionData, SideData>> tuplePlayerWithPos in lineUp)
             {
                 int col = GetGridColumnFromSide(lineUp, tuplePlayerWithPos);
-                int row = GetGridRowFromPosition(tuplePlayerWithPos.Item2.Item1);
+                int row = GetGridRowFromPosition(tuplePlayerWithPos.Item2.Key);
                 AddPlayerToFieldGrid(tuplePlayerWithPos.Item1, row, col);
             }
         }
 
-        private int GetGridColumnFromSide(List<Tuple<PlayerData, Tuple<PositionData, SideData>>> lineUp,
-            Tuple<PlayerData, Tuple<PositionData, SideData>> currentPlayerOfLineUp)
+        private int GetGridColumnFromSide(List<Tuple<PlayerData, KeyValuePair<PositionData, SideData>>> lineUp,
+            Tuple<PlayerData, KeyValuePair<PositionData, SideData>> currentPlayerOfLineUp)
         {
             // Shortcuts.
-            PositionData position = currentPlayerOfLineUp.Item2.Item1;
-            SideData side = currentPlayerOfLineUp.Item2.Item2;
+            PositionData position = currentPlayerOfLineUp.Item2.Key;
+            SideData side = currentPlayerOfLineUp.Item2.Value;
 
             // One goalkeeper.
             if (position == PositionData.GK)
@@ -112,26 +120,26 @@ namespace NewCmExplorer
             }
 
             // The current player is the only one for this central position
-            if (lineUp.Count(s => s.Item2.Item1 == position && s.Item2.Item2 == SideData.C) == 1)
+            if (lineUp.Count(s => s.Item2.Key == position && s.Item2.Value == SideData.C) == 1)
             {
                 return 2; // Middle column.
             }
 
             // Count of players already fixed for this position.
             int playersCountFixed = lineUp.Count(s =>
-                s.Item2.Item1 == position
-                && s.Item2.Item2 == SideData.C
+                s.Item2.Key == position
+                && s.Item2.Value == SideData.C
                 && lineUp.IndexOf(s) < lineUp.IndexOf(currentPlayerOfLineUp));
 
             // Two players overall (including the current one) to fix at the current position.
-            if (lineUp.Count(s => s.Item2.Item1 == position && s.Item2.Item2 == SideData.C) == 2)
+            if (lineUp.Count(s => s.Item2.Key == position && s.Item2.Value == SideData.C) == 2)
             {
                 // Middle-left or middle-right column, depending on players already fixed.
                 return playersCountFixed > 0 ? 3 : 1;
             }
 
             // Three players overall (including the current one) to fix at the current position.
-            if (lineUp.Count(s => s.Item2.Item1 == position && s.Item2.Item2 == SideData.C) == 3)
+            if (lineUp.Count(s => s.Item2.Key == position && s.Item2.Value == SideData.C) == 3)
             {
                 // Middle-left, middle-right or middle column, depending on players already fixed.
                 return playersCountFixed > 1 ? 3 : (playersCountFixed > 0 ? 2 : 1);
@@ -164,9 +172,9 @@ namespace NewCmExplorer
             }
         }
 
-        private static List<Tuple<PlayerData, Tuple<PositionData, SideData>>> BestLineUpForTactic(TacticData tactic)
+        private static List<Tuple<PlayerData, KeyValuePair<PositionData, SideData>>> BestLineUpForTactic(TacticData tactic)
         {
-            var bestLineUp = new List<Tuple<PlayerData, Tuple<PositionData, SideData>>>();
+            var bestLineUp = new List<Tuple<PlayerData, KeyValuePair<PositionData, SideData>>>();
 
             // Assumes the selected goalkeeper can't be a better choice at another position.
             // The side is useless here.
@@ -175,10 +183,10 @@ namespace NewCmExplorer
             List<PlayerData> fullSquadWithoutSelectedGk = new List<PlayerData>(DataMapper.Instance.Players);
             fullSquadWithoutSelectedGk.Remove(gkPlayer);
 
-            var bestPlayersByPosition = new Dictionary<Tuple<PositionData, SideData>, List<Tuple<PlayerData, int>>>();
-            foreach (Tuple<PositionData, SideData> positionAndSide in tactic.Positions)
+            var bestPlayersByPosition = new Dictionary<KeyValuePair<PositionData, SideData>, List<Tuple<PlayerData, int>>>();
+            foreach (KeyValuePair<PositionData, SideData> positionAndSide in tactic.Positions)
             {
-                if (bestPlayersByPosition.Keys.Any(k => k.Item1 == positionAndSide.Item1 && k.Item2 == positionAndSide.Item2))
+                if (bestPlayersByPosition.ContainsKey(positionAndSide))
                 {
                     continue;
                 }
@@ -186,7 +194,7 @@ namespace NewCmExplorer
                 bestPlayersByPosition[positionAndSide].AddRange(
                     fullSquadWithoutSelectedGk
                         .Select(p => new Tuple<PlayerData, int>(p,
-                            p.GlobalRate * p.Positions[positionAndSide.Item1] * p.Sides[positionAndSide.Item2]))
+                            p.GlobalRate * p.Positions[positionAndSide.Key] * p.Sides[positionAndSide.Value]))
                 );
                 bestPlayersByPosition[positionAndSide] = bestPlayersByPosition[positionAndSide].OrderByDescending(tuple => tuple.Item2).ToList();
             }
@@ -252,20 +260,20 @@ namespace NewCmExplorer
                                                         continue;
                                                     }
 
-                                                    var currentLineUp = new List<Tuple<PlayerData, Tuple<PositionData, SideData>>>();
+                                                    var currentLineUp = new List<Tuple<PlayerData, KeyValuePair<PositionData, SideData>>>();
                                                     int currentLineUpRate = 0;
                                                     foreach (int tacticTupleIndex in new[] { a0, a1, a2, a3, a4, a5, a6, a7, a8, a9 })
                                                     {
-                                                        Tuple<PositionData, SideData> tacticTuple = tactic.Positions.ElementAt(tacticTupleIndex);
+                                                        KeyValuePair<PositionData, SideData> tacticTuple = tactic.Positions.ElementAt(tacticTupleIndex);
 
                                                         Tuple<PlayerData, int> bestPlayerForTacticTuple =
-                                                            bestPlayersByPosition[bestPlayersByPosition.Keys.First(k => k.Item1 == tacticTuple.Item1 && k.Item2 == tacticTuple.Item2)]
+                                                            bestPlayersByPosition[tacticTuple]
                                                             .FirstOrDefault(p => !currentLineUp.Any(lu => lu.Item1 == p.Item1));
                                                         if (bestPlayerForTacticTuple != null)
                                                         {
                                                             currentLineUpRate += bestPlayerForTacticTuple.Item2;
                                                         }
-                                                        currentLineUp.Add(new Tuple<PlayerData, Tuple<PositionData, SideData>>(bestPlayerForTacticTuple.Item1, tacticTuple));
+                                                        currentLineUp.Add(new Tuple<PlayerData, KeyValuePair<PositionData, SideData>>(bestPlayerForTacticTuple?.Item1, tacticTuple));
                                                     }
 
                                                     if (currentLineUpRate > bestLineUpRate)
@@ -285,8 +293,8 @@ namespace NewCmExplorer
             }
 
             bestLineUp.Insert(0,
-                new Tuple<PlayerData, Tuple<PositionData, SideData>>(gkPlayer,
-                    new Tuple<PositionData, SideData>(PositionData.GK, SideData.C)));
+                new Tuple<PlayerData, KeyValuePair<PositionData, SideData>>(gkPlayer,
+                    new KeyValuePair<PositionData, SideData>(PositionData.GK, SideData.C)));
             return bestLineUp;
         }
 
