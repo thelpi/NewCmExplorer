@@ -30,6 +30,17 @@ namespace NewCmExplorer.Data
         }
 
         /// <summary>
+        /// Gets the value at the specified index in the <see cref="Positions"/> collection.
+        /// </summary>
+        /// <param name="i">The index in the <see cref="Positions"/> collection.</param>
+        /// <returns>The value at the specified index.</returns>
+        /// <exception cref="System.IndexOutOfRangeException"><paramref name="i"/> is out of range.</exception>
+        public KeyValuePair<PositionData, SideData> PositionAt(int i)
+        {
+            return _positions[i];
+        }
+
+        /// <summary>
         /// Four four two flat.
         /// </summary>
         public static TacticData FourFourTwoFlat
