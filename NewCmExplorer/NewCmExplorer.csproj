@@ -61,8 +61,12 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Data\AttributeData.cs" />
+    <Compile Include="Data\AttributeTypeData.cs" />
     <Compile Include="Data\ClubData.cs" />
+    <Compile Include="Data\ConfederationData.cs" />
     <Compile Include="Data\Constants.cs" />
+    <Compile Include="Data\CountryData.cs" />
     <Compile Include="Data\DataMapper.cs" />
     <Compile Include="Data\Extensions.cs" />
     <Compile Include="Data\PlayerData.cs" />
