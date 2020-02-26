@@ -1,14 +1,13 @@
-﻿namespace NewCmExplorer.Data
+﻿using System.Collections.Generic;
+
+namespace NewCmExplorer.Data
 {
     /// <summary>
     /// Represents an attribute.
     /// </summary>
-    public class AttributeData
+    /// <seealso cref="BaseData"/>
+    public class AttributeData : BaseData
     {
-        /// <summary>
-        /// Identifier.
-        /// </summary>
-        public int Id { get; private set; }
         /// <summary>
         /// Name.
         /// </summary>
@@ -21,12 +20,11 @@
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="id"><see cref="Id"/></param>
+        /// <param name="id"><see cref="BaseData.Id"/></param>
         /// <param name="name"><see cref="Name"/></param>
         /// <param name="attributeType"><see cref="AttributeType"/></param>
-        internal AttributeData(int id, string name, AttributeTypeData attributeType)
+        internal AttributeData(int id, string name, AttributeTypeData attributeType) : base(id)
         {
-            Id = id;
             Name = name;
             AttributeType = attributeType;
         }
@@ -35,6 +33,27 @@
         public override string ToString()
         {
             return Name;
+        }
+
+        /// <summary>
+        /// Gets every <see cref="AttributeData"/> instances.
+        /// </summary>
+        public static IReadOnlyCollection<AttributeData> Instances
+        {
+            get
+            {
+                return GetInstancesOfType<AttributeData>();
+            }
+        }
+
+        /// <summary>
+        /// Finds an instance by its identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>The instance; <c>Null</c> if not found.</returns>
+        public static AttributeData GetByid(int? id)
+        {
+            return GetByid<AttributeData>(id);
         }
     }
 }

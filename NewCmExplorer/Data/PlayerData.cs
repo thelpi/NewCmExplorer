@@ -7,7 +7,8 @@ namespace NewCmExplorer.Data
     /// <summary>
     /// Represents a player.
     /// </summary>
-    public class PlayerData
+    /// <seealso cref="BaseData"/>
+    public class PlayerData : BaseData
     {
         // Source date of birth.
         private readonly DateTime? _dateOfBirth;
@@ -19,11 +20,7 @@ namespace NewCmExplorer.Data
         private readonly Dictionary<SideData, int> _sides;
         // Attributes.
         private readonly Dictionary<AttributeData, int> _attributes;
-
-        /// <summary>
-        /// Identifier.
-        /// </summary>
-        public int Id { get; private set; }
+        
         /// <summary>
         /// First name.
         /// </summary>
@@ -153,7 +150,7 @@ namespace NewCmExplorer.Data
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="id"><see cref="Id"/></param>
+        /// <param name="id"><see cref="BaseData.Id"/></param>
         /// <param name="firstName"><see cref="FirstName"/></param>
         /// <param name="lastName"><see cref="LastName"/></param>
         /// <param name="commonName"><see cref="CommonName"/></param>
@@ -179,8 +176,8 @@ namespace NewCmExplorer.Data
             int currentAbility, int potentialAbility, int homeReputation, int currentReputation, int worldReputation,
             int rightFoot, int leftFoot, CountryData nationality, CountryData secondNationality, ClubData clubContract,
             DateTime? dateContractStart, DateTime? dateContractEnd, int wage, int value, int caps, int intGoals)
+            : base(id)
         {
-            Id = id;
             FirstName = firstName;
             LastName = lastName;
             CommonName = commonName;
@@ -288,6 +285,35 @@ namespace NewCmExplorer.Data
         public override string ToString()
         {
             return FullName;
+        }
+
+        /// <summary>
+        /// Gets every <see cref="PlayerData"/> instances.
+        /// </summary>
+        public static IReadOnlyCollection<PlayerData> Instances
+        {
+            get
+            {
+                return GetInstancesOfType<PlayerData>();
+            }
+        }
+
+        /// <summary>
+        /// Clears every <see cref="PlayerData"/> instances.
+        /// </summary>
+        internal static void ClearInstances()
+        {
+            Clear<PlayerData>();
+        }
+
+        /// <summary>
+        /// Finds an instance by its identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>The instance; <c>Null</c> if not found.</returns>
+        public static PlayerData GetByid(int? id)
+        {
+            return GetByid<PlayerData>(id);
         }
     }
 }

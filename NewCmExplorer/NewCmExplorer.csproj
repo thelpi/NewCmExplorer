@@ -64,6 +64,7 @@
     </Compile>
     <Compile Include="Data\AttributeData.cs" />
     <Compile Include="Data\AttributeTypeData.cs" />
+    <Compile Include="Data\BaseData.cs" />
     <Compile Include="Data\ClubData.cs" />
     <Compile Include="Data\ConfederationData.cs" />
     <Compile Include="Data\Constants.cs" />

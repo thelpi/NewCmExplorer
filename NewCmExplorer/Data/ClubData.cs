@@ -1,15 +1,14 @@
-﻿namespace NewCmExplorer.Data
+﻿using System.Collections.Generic;
+using System.Linq;
+
+namespace NewCmExplorer.Data
 {
     /// <summary>
     /// Represents a club.
     /// </summary>
-    public class ClubData
+    /// <seealso cref="BaseData"/>
+    public class ClubData : BaseData
     {
-        /// <summary>
-        /// Identifier.
-        /// </summary>
-        public int Id { get; private set; }
-
         /// <summary>
         /// Short name.
         /// </summary>
@@ -48,7 +47,7 @@
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="id"><see cref="Id"/></param>
+        /// <param name="id"><see cref="BaseData.Id"/></param>
         /// <param name="shortName"><see cref="ShortName"/></param>
         /// <param name="name"><see cref="Name"/></param>
         /// <param name="country"><see cref="Country"/></param>
@@ -57,9 +56,8 @@
         /// <param name="divisionId"><see cref="DivisionId"/></param>
         /// <param name="bank"><see cref="Bank"/></param>
         internal ClubData(int id, string shortName, string name, CountryData country,
-            int reputation, int facilities, int? divisionId, int bank)
+            int reputation, int facilities, int? divisionId, int bank) : base(id)
         {
-            Id = id;
             ShortName = shortName;
             Name = name;
             Country = country;
@@ -75,22 +73,42 @@
             return ShortName;
         }
 
-        private static ClubData _noClub;
-
         /// <summary>
-        /// Represents the virtual club related to unemployment.
+        /// Gets (and sets if not create yet) the virtual club for unemployment.
         /// </summary>
         public static ClubData NoClub
         {
             get
             {
-                if (_noClub == null)
+                ClubData noClub = Instances.FirstOrDefault(c => c.Id == Constants.NoClubId);
+                if (noClub == null)
                 {
-                    _noClub = new ClubData(Constants.NoClubId, Constants.NoClubName,
+                    noClub = new ClubData(Constants.NoClubId, Constants.NoClubName,
                         Constants.NoClubName, null, 0, 0, null, 0);
                 }
-                return _noClub;
+                return noClub;
             }
+        }
+
+        /// <summary>
+        /// Gets every <see cref="ClubData"/> instances.
+        /// </summary>
+        public static IReadOnlyCollection<ClubData> Instances
+        {
+            get
+            {
+                return GetInstancesOfType<ClubData>();
+            }
+        }
+
+        /// <summary>
+        /// Finds an instance by its identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>The instance; <see cref="NoClub"/> if not found.</returns>
+        public static ClubData GetByid(int? id)
+        {
+            return GetByid<ClubData>(id) ?? NoClub;
         }
     }
 }

@@ -27,93 +27,68 @@ namespace NewCmExplorer.Data
             }
         }
 
-        private DataMapper()
-        {
-            _clubs = new List<ClubData>();
-            _players = new List<PlayerData>();
-            _attributes = new List<AttributeData>();
-            _confederations = new List<ConfederationData>();
-            _countries = new List<CountryData>();
-        }
-
-        private readonly List<ClubData> _clubs;
-        private readonly List<PlayerData> _players;
-        private readonly List<AttributeData> _attributes;
-        private readonly List<ConfederationData> _confederations;
-        private readonly List<CountryData> _countries;
-
-        /// <summary>
-        /// Clubs list.
-        /// </summary>
-        public IReadOnlyCollection<ClubData> Clubs { get { return _clubs; } }
-        /// <summary>
-        /// Players list.
-        /// </summary>
-        public IReadOnlyCollection<PlayerData> Players { get { return _players; } }
-        /// <summary>
-        /// Attributes list.
-        /// </summary>
-        public IReadOnlyCollection<AttributeData> Attributes { get { return _attributes; } }
-        /// <summary>
-        /// Confederations list.
-        /// </summary>
-        public IReadOnlyCollection<ConfederationData> Confederations { get { return _confederations; } }
-        /// <summary>
-        /// Countries list.
-        /// </summary>
-        public IReadOnlyCollection<CountryData> Countries { get { return _countries; } }
+        private DataMapper() { }
 
         /// <summary>
         /// Loads static datas.
         /// </summary>
         internal void LoadStaticDatas()
         {
-            SetList(_attributes,
-                "attribute",
+            SetList("attribute",
                 new[] {"ID", "name", "type_ID" },
                 (SqlDataReader reader) =>
                 {
-                    return new AttributeData(reader.Get<int>("ID"), reader.Get<string>("name"),
+                    return new AttributeData(reader.Get<int>("ID"),
+                        reader.Get<string>("name"),
                         (AttributeTypeData)reader.Get<int>("type_ID"));
                 });
 
-            SetList(_confederations,
-                "confederation",
+            SetList("confederation",
                 new[] { "ID", "Name3", "Name", "PeopleName", "FedSigle", "FedName", "Strength" },
                 (SqlDataReader reader) =>
                 {
-                    return new ConfederationData(reader.Get<int>("ID"), reader.Get<string>("Name3"),
-                        reader.Get<string>("Name"), reader.Get<string>("PeopleName"), reader.Get<string>("FedSigle"),
-                        reader.Get<string>("FedName"), reader.Get<decimal>("Strength"));
+                    return new ConfederationData(reader.Get<int>("ID"),
+                        reader.Get<string>("Name3"),
+                        reader.Get<string>("Name"),
+                        reader.Get<string>("PeopleName"),
+                        reader.Get<string>("FedSigle"),
+                        reader.Get<string>("FedName"),
+                        reader.Get<decimal>("Strength"));
                 });
 
-            SetList(_countries,
-                "country",
+            SetList("country",
                 new[] { "ID", "Name", "NameShort", "Name3", "ContinentID", "is_EU" },
                 (SqlDataReader reader) =>
                 {
-                    return new CountryData(reader.Get<int>("ID"), reader.Get<string>("Name3"),
-                        reader.Get<string>("NameShort"), reader.Get<string>("Name"),
-                        GetConfederationById(reader.Get<int?>("ContinentID")), reader.Get<byte>("is_EU") > 0);
+                    return new CountryData(reader.Get<int>("ID"),
+                        reader.Get<string>("Name3"),
+                        reader.Get<string>("NameShort"),
+                        reader.Get<string>("Name"),
+                        ConfederationData.GetByid(reader.Get<int?>("ContinentID")),
+                        reader.Get<byte>("is_EU") > 0);
                 });
 
-            SetList(_clubs,
-                "club",
+            SetList("club",
                 new[] { "ID", "ShortName", "LongName", "NationID", "Reputation", "Facilities", "DivisionID", "Bank" },
                 (SqlDataReader reader) =>
                 {
-                    return new ClubData(reader.Get<int>("ID"), reader.Get<string>("ShortName"),
-                        reader.Get<string>("LongName"), GetCountryById(reader.Get<int?>("NationID")),
-                        reader.Get<int>("Reputation"), reader.Get<int>("Facilities"),
-                        reader.Get<int?>("DivisionID"), reader.Get<int>("Bank"));
+                    return new ClubData(reader.Get<int>("ID"),
+                        reader.Get<string>("ShortName"),
+                        reader.Get<string>("LongName"),
+                        CountryData.GetByid(reader.Get<int?>("NationID")),
+                        reader.Get<int>("Reputation"),
+                        reader.Get<int>("Facilities"),
+                        reader.Get<int?>("DivisionID"),
+                        reader.Get<int>("Bank"));
                 });
-            _clubs.Insert(0, ClubData.NoClub);
+
+            // Forces the "NoClub" instance creation.
+            ClubData.GetByid(-1);
         }
 
-        private void SetList<T>(List<T> instances, string table, string[] columns,
-            Func<SqlDataReader, T> readerToDataFunc, string whereStatement = null, params SqlParameter[] parameters)
+        private void SetList<T>(string table, string[] columns, Func<SqlDataReader, T> readerToDataFunc,
+            string whereStatement = null, params SqlParameter[] parameters) where T : BaseData
         {
-            instances.Clear();
             using (var conn = new SqlConnection(Settings.Default.connectionString))
             {
                 conn.Open();
@@ -131,7 +106,7 @@ namespace NewCmExplorer.Data
                     {
                         while (reader.Read())
                         {
-                            instances.Add(readerToDataFunc(reader));
+                            readerToDataFunc(reader);
                         }
                     }
                 }
@@ -144,17 +119,20 @@ namespace NewCmExplorer.Data
         /// <param name="club">Club.</param>
         internal void LoadPlayers(ClubData club)
         {
-            SetList(_players,
-                "player",
+            PlayerData.ClearInstances();
+            SetList("player",
                 new[] { "ID", "Firstname", "Lastname", "Commonname", "DateOfBirth", "YearOfBirth", "CurrentAbility",
                     "PotentialAbility", "HomeReputation", "CurrentReputation", "WorldReputation",
                     "RightFoot", "LeftFoot", "NationID1", "NationID2", "ClubContractID", "DateContractStart",
                     "DateContractEnd", "Value", "Wage", "Caps", "IntGoals" },
                 (SqlDataReader reader) =>
                 {
-                    return new PlayerData(reader.Get<int>("ID"), reader.Get<string>("Firstname"),
-                        reader.Get<string>("Lastname"), reader.Get<string>("Commonname"),
-                        reader.Get<DateTime?>("DateOfBirth"), reader.Get<int?>("YearOfBirth"),
+                    return new PlayerData(reader.Get<int>("ID"),
+                        reader.Get<string>("Firstname"),
+                        reader.Get<string>("Lastname"),
+                        reader.Get<string>("Commonname"),
+                        reader.Get<DateTime?>("DateOfBirth"),
+                        reader.Get<int?>("YearOfBirth"),
                         reader.Get<int>("CurrentAbility", new Tuple<int, int>(0, 100)),
                         reader.Get<int>("PotentialAbility",
                             new Tuple<int, int>(0, 100),
@@ -165,9 +143,9 @@ namespace NewCmExplorer.Data
                         reader.Get<int>("WorldReputation", new Tuple<int, int>(0, 100)),
                         reader.Get<int>("RightFoot"),
                         reader.Get<int>("LeftFoot"),
-                        GetCountryById(reader.Get<int?>("NationID1")),
-                        GetCountryById(reader.Get<int?>("NationID2")),
-                        GetClubById(reader.Get<int?>("ClubContractID")),
+                        CountryData.GetByid(reader.Get<int?>("NationID1")),
+                        CountryData.GetByid(reader.Get<int?>("NationID2")),
+                        ClubData.GetByid(reader.Get<int?>("ClubContractID")),
                         reader.Get<DateTime?>("DateContractStart"),
                         reader.Get<DateTime?>("DateContractEnd"),
                         reader.Get<int>("Wage"),
@@ -186,72 +164,55 @@ namespace NewCmExplorer.Data
                     cmd.CommandText = "SELECT [position_ID], [rate] FROM [dbo].[player_position] WHERE [player_ID] = @player";
                     cmd.Parameters.Add("@player", System.Data.SqlDbType.Int);
                     cmd.Prepare();
-                    foreach (PlayerData p in _players)
+                    foreach (PlayerData p in PlayerData.Instances)
                     {
                         cmd.Parameters["@player"].Value = p.Id;
                         using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                p.SetPosition((PositionData)reader.Get<int>("position_ID"), reader.Get<int>("rate"));
+                                p.SetPosition((PositionData)reader.Get<int>("position_ID"),
+                                    reader.Get<int>("rate"));
                             }
                         }
                     }
                     
                     cmd.CommandText = "SELECT [side_ID], [rate] FROM [dbo].[player_side] WHERE [player_ID] = @player";
                     cmd.Prepare();
-                    foreach (PlayerData p in _players)
+                    foreach (PlayerData p in PlayerData.Instances)
                     {
                         cmd.Parameters["@player"].Value = p.Id;
                         using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                p.SetSide((SideData)reader.Get<int>("side_ID"), reader.Get<int>("rate"));
+                                p.SetSide((SideData)reader.Get<int>("side_ID"),
+                                    reader.Get<int>("rate"));
                             }
                         }
                     }
 
                     cmd.CommandText = "SELECT [attribute_ID], [rate] FROM [dbo].[player_attribute] WHERE [player_ID] = @player";
                     cmd.Prepare();
-                    foreach (PlayerData p in _players)
+                    foreach (PlayerData p in PlayerData.Instances)
                     {
                         cmd.Parameters["@player"].Value = p.Id;
                         using (var reader = cmd.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                p.SetAttribute(GetAttributeById(reader.Get<int>("attribute_ID")), reader.Get<int>("rate"));
+                                p.SetAttribute(AttributeData.GetByid(reader.Get<int>("attribute_ID")),
+                                    reader.Get<int>("rate"));
                             }
                         }
                     }
                 }
             }
 
-            foreach (PlayerData p in _players)
+            foreach (PlayerData p in PlayerData.Instances)
             {
                 p.AdjustPositionAndSide();
             }
-        }
-
-        private CountryData GetCountryById(int? countryId)
-        {
-            return countryId.HasValue ? _countries.Find(c => c.Id == countryId) : null;
-        }
-
-        private ConfederationData GetConfederationById(int? confederationId)
-        {
-            return confederationId.HasValue ? _confederations.Find(c => c.Id == confederationId) : null;
-        }
-
-        private AttributeData GetAttributeById(int? attributeId)
-        {
-            return attributeId.HasValue ? _attributes.Find(c => c.Id == attributeId) : null;
-        }
-
-        private ClubData GetClubById(int? clubId)
-        {
-            return clubId.HasValue ? _clubs.Find(c => c.Id == clubId) : ClubData.NoClub;
         }
     }
 }

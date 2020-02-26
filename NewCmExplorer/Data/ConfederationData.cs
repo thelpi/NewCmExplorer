@@ -1,14 +1,13 @@
-﻿namespace NewCmExplorer.Data
+﻿using System.Collections.Generic;
+
+namespace NewCmExplorer.Data
 {
     /// <summary>
     /// Represents a confederation.
     /// </summary>
-    public class ConfederationData
+    /// <seealso cref="BaseData"/>
+    public class ConfederationData : BaseData
     {
-        /// <summary>
-        /// Identifier.
-        /// </summary>
-        public int Id { get; private set; }
         /// <summary>
         /// Continent code.
         /// </summary>
@@ -37,7 +36,7 @@
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="id"><see cref="Id"/></param>
+        /// <param name="id"><see cref="BaseData.Id"/></param>
         /// <param name="contCode"><see cref="ContCode"/></param>
         /// <param name="contName"><see cref="ContName"/></param>
         /// <param name="contDemonym"><see cref="ContDemonym"/></param>
@@ -45,9 +44,8 @@
         /// <param name="fedName"><see cref="FedName"/></param>
         /// <param name="strength"><see cref="Strength"/></param>
         internal ConfederationData(int id, string contCode, string contName, string contDemonym,
-            string fedCode, string fedName, decimal strength)
+            string fedCode, string fedName, decimal strength) : base(id)
         {
-            Id = id;
             ContCode = contCode;
             ContName = contName;
             ContDemonym = contDemonym;
@@ -60,6 +58,27 @@
         public override string ToString()
         {
             return ContName;
+        }
+
+        /// <summary>
+        /// Gets every <see cref="ConfederationData"/> instances.
+        /// </summary>
+        public static IReadOnlyCollection<ConfederationData> Instances
+        {
+            get
+            {
+                return GetInstancesOfType<ConfederationData>();
+            }
+        }
+
+        /// <summary>
+        /// Finds an instance by its identifier.
+        /// </summary>
+        /// <param name="id">The identifier.</param>
+        /// <returns>The instance; <c>Null</c> if not found.</returns>
+        public static ConfederationData GetByid(int? id)
+        {
+            return GetByid<ConfederationData>(id);
         }
     }
 }

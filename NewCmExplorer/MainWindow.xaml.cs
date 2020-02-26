@@ -55,9 +55,9 @@ namespace NewCmExplorer
                 PanelProgress.Visibility = Visibility.Collapsed;
                 ComboTactics.ItemsSource = TacticData.DefaultTactics;
                 ComboTactics.DisplayMemberPath = nameof(TacticData.Name);
-                ComboClubs.ItemsSource = DataMapper.Instance.Clubs;
+                ComboClubs.ItemsSource = ClubData.Instances;
                 ComboClubs.DisplayMemberPath = nameof(ClubData.ShortName);
-                FullStaff.ItemsSource = DataMapper.Instance.Players;
+                FullStaff.ItemsSource = PlayerData.Instances;
                 FullStaff.DisplayMemberPath = nameof(PlayerData.FullName);
             };
             worker.RunWorkerAsync();
@@ -198,9 +198,9 @@ namespace NewCmExplorer
         {
             // Assumes the selected goalkeeper can't be a better choice at another position.
             // The side is useless here.
-            PlayerData gkPlayer = GetSquadBestPlayerByPositionAndSide(DataMapper.Instance.Players, PositionData.GK, SideData.C);
+            PlayerData gkPlayer = GetSquadBestPlayerByPositionAndSide(PlayerData.Instances, PositionData.GK, SideData.C);
         
-            List<PlayerData> fullSquadWithoutSelectedGk = new List<PlayerData>(DataMapper.Instance.Players);
+            List<PlayerData> fullSquadWithoutSelectedGk = new List<PlayerData>(PlayerData.Instances);
             fullSquadWithoutSelectedGk.Remove(gkPlayer);
 
             var bestPlayersByPosition = new Dictionary<KeyValuePair<PositionData, SideData>, Dictionary<PlayerData, int>>();
