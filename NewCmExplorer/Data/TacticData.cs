@@ -24,6 +24,7 @@ namespace NewCmExplorer.Data
             _positions = new List<KeyValuePair<PositionData, SideData>>();
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return Name;

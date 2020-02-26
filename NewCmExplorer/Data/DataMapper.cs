@@ -68,15 +68,6 @@ namespace NewCmExplorer.Data
         /// </summary>
         internal void LoadStaticDatas()
         {
-            SetList(_clubs,
-                "club",
-                new[] { "ID", "ShortName" },
-                (SqlDataReader reader) =>
-                {
-                    return new ClubData(reader.Get<int>("ID"), reader.Get<string>("ShortName"));
-                });
-            _clubs.Insert(0, ClubData.NoClub);
-
             SetList(_attributes,
                 "attribute",
                 new[] {"ID", "name", "type_ID" },
@@ -105,11 +96,18 @@ namespace NewCmExplorer.Data
                         reader.Get<string>("NameShort"), reader.Get<string>("Name"),
                         GetConfederationById(reader.Get<int?>("ContinentID")), reader.Get<byte>("is_EU") > 0);
                 });
-        }
 
-        private ConfederationData GetConfederationById(int? confederationId)
-        {
-            return confederationId.HasValue ? _confederations.Find(c => c.Id == confederationId) : null;
+            SetList(_clubs,
+                "club",
+                new[] { "ID", "ShortName", "LongName", "NationID", "Reputation", "Facilities", "DivisionID", "Bank" },
+                (SqlDataReader reader) =>
+                {
+                    return new ClubData(reader.Get<int>("ID"), reader.Get<string>("ShortName"),
+                        reader.Get<string>("LongName"), GetCountryById(reader.Get<int?>("NationID")),
+                        reader.Get<int>("Reputation"), reader.Get<int>("Facilities"),
+                        reader.Get<int?>("DivisionID"), reader.Get<int>("Bank"));
+                });
+            _clubs.Insert(0, ClubData.NoClub);
         }
 
         private void SetList<T>(List<T> instances, string table, string[] columns,
@@ -162,10 +160,9 @@ namespace NewCmExplorer.Data
                             new Tuple<int, int>(-2, 180)),
                         reader.Get<int>("HomeReputation", new Tuple<int, int>(0, 100)),
                         reader.Get<int>("CurrentReputation", new Tuple<int, int>(0, 100)),
-                        reader.Get<int>("WorldReputation", new Tuple<int, int>(0, 100)),
-                        0);
+                        reader.Get<int>("WorldReputation", new Tuple<int, int>(0, 100)));
                 },
-                "ISNULL([ClubContractID], -1) = @club",
+                "ISNULL([ClubContractID], " + Constants.NoClubId.ToString() + ") = @club",
                 new SqlParameter("@club", club.Id));
             
             using (var conn = new SqlConnection(Settings.Default.connectionString))
@@ -201,6 +198,20 @@ namespace NewCmExplorer.Data
                             }
                         }
                     }
+
+                    cmd.CommandText = "SELECT [attribute_ID], [rate] FROM [dbo].[player_attribute] WHERE [player_ID] = @player";
+                    cmd.Prepare();
+                    foreach (PlayerData p in _players)
+                    {
+                        cmd.Parameters["@player"].Value = p.Id;
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                p.SetAttribute(GetAttributeById(reader.Get<int>("attribute_ID")), reader.Get<int>("rate"));
+                            }
+                        }
+                    }
                 }
             }
 
@@ -208,6 +219,21 @@ namespace NewCmExplorer.Data
             {
                 p.AdjustPositionAndSide();
             }
+        }
+
+        private CountryData GetCountryById(int? countryId)
+        {
+            return countryId.HasValue ? _countries.Find(c => c.Id == countryId) : null;
+        }
+
+        private ConfederationData GetConfederationById(int? confederationId)
+        {
+            return confederationId.HasValue ? _confederations.Find(c => c.Id == confederationId) : null;
+        }
+
+        private AttributeData GetAttributeById(int? attributeId)
+        {
+            return attributeId.HasValue ? _attributes.Find(c => c.Id == attributeId) : null;
         }
     }
 }

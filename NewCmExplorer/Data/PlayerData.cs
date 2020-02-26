@@ -17,6 +17,8 @@ namespace NewCmExplorer.Data
         private readonly Dictionary<PositionData, int> _positions;
         // Sides.
         private readonly Dictionary<SideData, int> _sides;
+        // Attributes.
+        private readonly Dictionary<AttributeData, int> _attributes;
 
         /// <summary>
         /// Identifier.
@@ -85,10 +87,6 @@ namespace NewCmExplorer.Data
                 return Constants.UNKNOWN_DATE;
             }
         }
-        /// <summary>
-        /// Inferred (at some point); sum of rates for each attribute.
-        /// </summary>
-        public int GlobalRate { get; private set; }
 
         /// <summary>
         /// Positions with rate collection.
@@ -98,6 +96,15 @@ namespace NewCmExplorer.Data
         /// Sides with rate collection.
         /// </summary>
         public IReadOnlyDictionary<SideData, int> Sides { get { return _sides; } }
+        /// <summary>
+        /// Attributes with rate collection.
+        /// </summary>
+        public IReadOnlyDictionary<AttributeData, int> Attributes { get { return _attributes; } }
+
+        /// <summary>
+        /// Inferred; sum of rates for each attribute.
+        /// </summary>
+        public int GlobalRate { get { return _attributes.Sum(kvp => kvp.Value); } }
 
         /// <summary>
         /// Constructor.
@@ -110,12 +117,11 @@ namespace NewCmExplorer.Data
         /// <param name="yearOfBirth"><see cref="_yearOfBirth"/></param>
         /// <param name="currentAbility"><see cref="CurrentAbility"/></param>
         /// <param name="currentReputation"><see cref="CurrentReputation"/></param>
-        /// <param name="globalRate"><see cref="GlobalRate"/> (temporarly).</param>
         /// <param name="homeReputation"><see cref="HomeReputation"/></param>
         /// <param name="potentialAbility"><see cref="PotentialAbility"/></param>
         /// <param name="worldReputation"><see cref="WorldReputation"/></param>
         internal PlayerData(int id, string firstName, string lastName, string commonName, DateTime? dateOfBirth, int? yearOfBirth,
-            int currentAbility, int potentialAbility, int homeReputation, int currentReputation, int worldReputation, int globalRate)
+            int currentAbility, int potentialAbility, int homeReputation, int currentReputation, int worldReputation)
         {
             Id = id;
             FirstName = firstName;
@@ -131,9 +137,7 @@ namespace NewCmExplorer.Data
 
             _positions = Enum.GetValues(typeof(PositionData)).OfType<PositionData>().ToDictionary(p => p, p => 1);
             _sides = Enum.GetValues(typeof(SideData)).OfType<SideData>().ToDictionary(s => s, p => 1);
-
-            // Temporary.
-            GlobalRate = globalRate;
+            _attributes = new Dictionary<AttributeData, int>();
         }
 
         /// <summary>
@@ -154,6 +158,23 @@ namespace NewCmExplorer.Data
         internal void SetSide(SideData side, int rate)
         {
             _sides[side] = rate;
+        }
+
+        /// <summary>
+        /// Sets a <see cref="AttributeData"/>.
+        /// </summary>
+        /// <param name="attribute">The attribute.</param>
+        /// <param name="rate">The rate.</param>
+        internal void SetAttribute(AttributeData attribute, int rate)
+        {
+            if (!_attributes.ContainsKey(attribute))
+            {
+                _attributes.Add(attribute, rate);
+            }
+            else
+            {
+                _attributes[attribute] = rate;
+            }
         }
 
         /// <summary>
@@ -195,6 +216,7 @@ namespace NewCmExplorer.Data
             }
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return FullName;

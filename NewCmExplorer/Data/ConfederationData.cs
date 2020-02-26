@@ -55,5 +55,11 @@
             FedName = fedName;
             Strength = strength;
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return ContName;
+        }
     }
 }

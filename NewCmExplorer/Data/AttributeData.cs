@@ -30,5 +30,11 @@
             Name = name;
             AttributeType = attributeType;
         }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

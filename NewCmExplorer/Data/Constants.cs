@@ -21,5 +21,13 @@
         /// Text to display when there's no player for a specified position on the field.
         /// </summary>
         internal const string DISPLAY_FIELD_NO_PLAYER = "<unavailable>";
+        /// <summary>
+        /// Identifier of virtual club to represent unemployment.
+        /// </summary>
+        internal const int NoClubId = -1;
+        /// <summary>
+        /// Name of virtual club to represent unemployment.
+        /// </summary>
+        internal const string NoClubName = "No club";
     }
 }
