@@ -147,7 +147,9 @@ namespace NewCmExplorer.Data
             SetList(_players,
                 "player",
                 new[] { "ID", "Firstname", "Lastname", "Commonname", "DateOfBirth", "YearOfBirth", "CurrentAbility",
-                    "PotentialAbility", "HomeReputation", "CurrentReputation", "WorldReputation" },
+                    "PotentialAbility", "HomeReputation", "CurrentReputation", "WorldReputation",
+                    "RightFoot", "LeftFoot", "NationID1", "NationID2", "ClubContractID", "DateContractStart",
+                    "DateContractEnd", "Value", "Wage", "Caps", "IntGoals" },
                 (SqlDataReader reader) =>
                 {
                     return new PlayerData(reader.Get<int>("ID"), reader.Get<string>("Firstname"),
@@ -160,7 +162,18 @@ namespace NewCmExplorer.Data
                             new Tuple<int, int>(-2, 180)),
                         reader.Get<int>("HomeReputation", new Tuple<int, int>(0, 100)),
                         reader.Get<int>("CurrentReputation", new Tuple<int, int>(0, 100)),
-                        reader.Get<int>("WorldReputation", new Tuple<int, int>(0, 100)));
+                        reader.Get<int>("WorldReputation", new Tuple<int, int>(0, 100)),
+                        reader.Get<int>("RightFoot"),
+                        reader.Get<int>("LeftFoot"),
+                        GetCountryById(reader.Get<int?>("NationID1")),
+                        GetCountryById(reader.Get<int?>("NationID2")),
+                        GetClubById(reader.Get<int?>("ClubContractID")),
+                        reader.Get<DateTime?>("DateContractStart"),
+                        reader.Get<DateTime?>("DateContractEnd"),
+                        reader.Get<int>("Wage"),
+                        reader.Get<int>("Value"),
+                        reader.Get<int>("Caps"),
+                        reader.Get<int>("IntGoals"));
                 },
                 "ISNULL([ClubContractID], " + Constants.NoClubId.ToString() + ") = @club",
                 new SqlParameter("@club", club.Id));
@@ -234,6 +247,11 @@ namespace NewCmExplorer.Data
         private AttributeData GetAttributeById(int? attributeId)
         {
             return attributeId.HasValue ? _attributes.Find(c => c.Id == attributeId) : null;
+        }
+
+        private ClubData GetClubById(int? clubId)
+        {
+            return clubId.HasValue ? _clubs.Find(c => c.Id == clubId) : ClubData.NoClub;
         }
     }
 }

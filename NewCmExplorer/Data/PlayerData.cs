@@ -56,6 +56,50 @@ namespace NewCmExplorer.Data
         /// World reputation.
         /// </summary>
         public int WorldReputation { get; private set; }
+        /// <summary>
+        /// Right foot (rate).
+        /// </summary>
+        public int RightFoot { get; private set; }
+        /// <summary>
+        /// Left foot (rate).
+        /// </summary>
+        public int LeftFoot { get; private set; }
+        /// <summary>
+        /// Nationality.
+        /// </summary>
+        public CountryData Nationality { get; private set; }
+        /// <summary>
+        /// Second nationality.
+        /// </summary>
+        public CountryData SecondNationality { get; private set; }
+        /// <summary>
+        /// Caps.
+        /// </summary>
+        public int Caps { get; private set; }
+        /// <summary>
+        /// International goals.
+        /// </summary>
+        public int IntGoals { get; private set; }
+        /// <summary>
+        /// Value.
+        /// </summary>
+        public int Value { get; private set; }
+        /// <summary>
+        /// Wage.
+        /// </summary>
+        public int Wage { get; private set; }
+        /// <summary>
+        /// Club contract.
+        /// </summary>
+        public ClubData ClubContract { get; private set; }
+        /// <summary>
+        /// Date contract start.
+        /// </summary>
+        public DateTime? DateContractStart { get; private set; }
+        /// <summary>
+        /// Date contract end.
+        /// </summary>
+        public DateTime? DateContractEnd { get; private set; }
 
         /// <summary>
         /// Inferred; full name.
@@ -120,8 +164,21 @@ namespace NewCmExplorer.Data
         /// <param name="homeReputation"><see cref="HomeReputation"/></param>
         /// <param name="potentialAbility"><see cref="PotentialAbility"/></param>
         /// <param name="worldReputation"><see cref="WorldReputation"/></param>
+        /// <param name="rightFoot"><see cref="RightFoot"/></param>
+        /// <param name="leftFoot"><see cref="LeftFoot"/></param>
+        /// <param name="nationality"><see cref="Nationality"/></param>
+        /// <param name="secondNationality"><see cref="SecondNationality"/></param>
+        /// <param name="clubContract"><see cref="ClubContract"/></param>
+        /// <param name="dateContractStart"><see cref="DateContractStart"/></param>
+        /// <param name="dateContractEnd"><see cref="DateContractEnd"/></param>
+        /// <param name="wage"><see cref="Wage"/></param>
+        /// <param name="value"><see cref="Value"/></param>
+        /// <param name="caps"><see cref="Caps"/></param>
+        /// <param name="intGoals"><see cref="IntGoals"/></param>
         internal PlayerData(int id, string firstName, string lastName, string commonName, DateTime? dateOfBirth, int? yearOfBirth,
-            int currentAbility, int potentialAbility, int homeReputation, int currentReputation, int worldReputation)
+            int currentAbility, int potentialAbility, int homeReputation, int currentReputation, int worldReputation,
+            int rightFoot, int leftFoot, CountryData nationality, CountryData secondNationality, ClubData clubContract,
+            DateTime? dateContractStart, DateTime? dateContractEnd, int wage, int value, int caps, int intGoals)
         {
             Id = id;
             FirstName = firstName;
@@ -134,6 +191,17 @@ namespace NewCmExplorer.Data
             HomeReputation = homeReputation;
             CurrentReputation = currentReputation;
             WorldReputation = worldReputation;
+            RightFoot = rightFoot;
+            LeftFoot = leftFoot;
+            Nationality = nationality;
+            SecondNationality = secondNationality;
+            ClubContract = clubContract;
+            DateContractStart = dateContractStart;
+            DateContractEnd = dateContractEnd;
+            Value = value;
+            Wage = wage;
+            Caps = caps;
+            IntGoals = intGoals;
 
             _positions = Enum.GetValues(typeof(PositionData)).OfType<PositionData>().ToDictionary(p => p, p => 1);
             _sides = Enum.GetValues(typeof(SideData)).OfType<SideData>().ToDictionary(s => s, p => 1);
