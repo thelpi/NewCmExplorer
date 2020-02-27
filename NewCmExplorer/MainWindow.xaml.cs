@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Shapes;
 using NewCmExplorer.Data;
@@ -12,14 +13,10 @@ using NewCmExplorer.Data;
 namespace NewCmExplorer
 {
     /// <summary>
-    /// Logique d'interaction pour MainWindow.xaml
+    /// Interaction logic for MainWindow.xaml
     /// </summary>
     public partial class MainWindow : Window
     {
-        private const char SEQUENCE_SEPARATOR = ';';
-
-        private static List<HashSet<HashSet<int>>> _parallelSequences;
-
         /// <summary>
         /// Constructor.
         /// </summary>
@@ -27,50 +24,41 @@ namespace NewCmExplorer
         {
             InitializeComponent();
 
-            _parallelSequences = new List<HashSet<HashSet<int>>>();
-
             BackgroundWorker worker = new BackgroundWorker();
             worker.DoWork += delegate (object sender, DoWorkEventArgs e)
             {
                 DataMapper.Instance.LoadStaticDatas();
-                string[] rows = Properties.Resources.Sequences.Split(
-                    new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-
-                int i = 0;
-                foreach (string row in rows)
-                {
-                    if (i % (rows.Length / Environment.ProcessorCount) == 0)
-                    {
-                        _parallelSequences.Add(new HashSet<HashSet<int>>());
-                    }
-
-                    string[] sequence = row.Split(new[] { SEQUENCE_SEPARATOR });
-                    _parallelSequences.Last().Add(new HashSet<int>(sequence.Select(s => Convert.ToInt32(s))));
-                    i++;
-                }
             };
             worker.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
             {
                 MainPanel.IsEnabled = true;
                 PanelProgress.Visibility = Visibility.Collapsed;
+
+                ComboConfederations.ItemsSource = ConfederationData.Instances;
+                ComboConfederations.DisplayMemberPath = nameof(ConfederationData.ContName);
+                ComboCountries.ItemsSource = CountryData.Instances;
+                ComboCountries.DisplayMemberPath = nameof(CountryData.ShortName);
+                ComboClubs.DisplayMemberPath = nameof(ClubData.ShortName);
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances);
                 ComboTactics.ItemsSource = TacticData.DefaultTactics;
                 ComboTactics.DisplayMemberPath = nameof(TacticData.Name);
-                ComboClubs.ItemsSource = ClubData.Instances;
-                ComboClubs.DisplayMemberPath = nameof(ClubData.ShortName);
                 FullStaff.ItemsSource = PlayerData.Instances;
                 FullStaff.DisplayMemberPath = nameof(PlayerData.FullName);
             };
             worker.RunWorkerAsync();
         }
 
-        private void ComboTactics_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            Refreh();
-        }
+        #region Graphic tools
 
-        private void ComboClubs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void SetLineUpGrid(Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> lineUp)
         {
-            Refreh();
+            FieldGrid.Children.Clear();
+            foreach (PlayerData player in lineUp.Keys)
+            {
+                int col = GetGridColumnFromSide(lineUp, player, lineUp[player]);
+                int row = GetGridRowFromPosition(lineUp[player].Key);
+                AddPlayerToFieldGrid(player, row, col);
+            }
         }
 
         private void Refreh()
@@ -87,7 +75,7 @@ namespace NewCmExplorer
             {
                 object[] arguments = e.Argument as object[];
                 DataMapper.Instance.LoadPlayers((ClubData)(arguments[0]));
-                e.Result = BestLineUpForTactic((TacticData)(arguments[1]));
+                e.Result = DataMapper.Instance.BestLineUpForTactic((TacticData)(arguments[1]));
             };
             worker.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
             {
@@ -107,15 +95,63 @@ namespace NewCmExplorer
             worker.RunWorkerAsync(new object[] { ComboClubs.SelectedItem, ComboTactics.SelectedItem });
         }
 
-        private void SetLineUpGrid(Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> lineUp)
+        private void AddPlayerToFieldGrid(PlayerData p, int row, int col)
         {
-            FieldGrid.Children.Clear();
-            foreach (PlayerData player in lineUp.Keys)
+            var e = new Ellipse
             {
-                int col = GetGridColumnFromSide(lineUp, player, lineUp[player]);
-                int row = GetGridRowFromPosition(lineUp[player].Key);
-                AddPlayerToFieldGrid(player, row, col);
+                Fill = Brushes.Yellow,
+                Width = 70,
+                Height = 70,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            var t = new TextBlock
+            {
+                Text = p?.FullName ?? Constants.DISPLAY_FIELD_NO_PLAYER,
+                TextWrapping = TextWrapping.WrapWithOverflow,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            e.SetValue(Grid.RowProperty, row);
+            e.SetValue(Grid.ColumnProperty, col);
+            e.SetValue(Panel.ZIndexProperty, 1);
+            t.SetValue(Grid.RowProperty, row);
+            t.SetValue(Grid.ColumnProperty, col);
+            t.SetValue(Panel.ZIndexProperty, 2);
+
+            FieldGrid.Children.Add(e);
+            FieldGrid.Children.Add(t);
+        }
+
+        private static int GetGridRowFromPosition(PositionData position)
+        {
+            switch (position)
+            {
+                case PositionData.SW:
+                    return 5;
+                case PositionData.D:
+                    return 4;
+                case PositionData.DM:
+                    return 3;
+                case PositionData.M:
+                    return 2;
+                case PositionData.OM:
+                    return 1;
+                case PositionData.S:
+                    return 0;
+                case PositionData.GK:
+                    return 6;
+                default:
+                    throw new NotImplementedException();
             }
+        }
+
+        private static ListCollectionView GetListCollectionView(IEnumerable<ClubData> baseList)
+        {
+            ListCollectionView lcv = new ListCollectionView(baseList.ToList());
+            lcv.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ClubData.DivisionId)));
+            return lcv;
         }
 
         private int GetGridColumnFromSide(Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> lineUp,
@@ -171,149 +207,46 @@ namespace NewCmExplorer
             throw new NotImplementedException();
         }
 
-        private static int GetGridRowFromPosition(PositionData position)
+        #endregion Graphic tools
+
+        #region Events
+
+        private void ComboTactics_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            switch (position)
+            Refreh();
+        }
+
+        private void ComboClubs_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            Refreh();
+        }
+
+        private void ComboConfederations_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ComboConfederations.SelectedItem != null)
             {
-                case PositionData.SW:
-                    return 5;
-                case PositionData.D:
-                    return 4;
-                case PositionData.DM:
-                    return 3;
-                case PositionData.M:
-                    return 2;
-                case PositionData.OM:
-                    return 1;
-                case PositionData.S:
-                    return 0;
-                case PositionData.GK:
-                    return 6;
-                default:
-                    throw new NotImplementedException();
+                ComboCountries.ItemsSource = CountryData.Instances.Where(c => c.Confederation == ComboConfederations.SelectedItem);
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country?.Confederation == ComboConfederations.SelectedItem));
+            }
+            else
+            {
+                ComboCountries.ItemsSource = CountryData.Instances;
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances);
             }
         }
 
-        private static Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> BestLineUpForTactic(TacticData tactic)
+        private void ComboCountries_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Assumes the selected goalkeeper can't be a better choice at another position.
-            // The side is useless here.
-            PlayerData gkPlayer = GetSquadBestPlayerByPositionAndSide(PlayerData.Instances, PositionData.GK, SideData.C);
-        
-            List<PlayerData> fullSquadWithoutSelectedGk = new List<PlayerData>(PlayerData.Instances);
-            fullSquadWithoutSelectedGk.Remove(gkPlayer);
-
-            var bestPlayersByPosition = new Dictionary<KeyValuePair<PositionData, SideData>, Dictionary<PlayerData, int>>();
-            foreach (KeyValuePair<PositionData, SideData> positionAndSide in tactic.Positions)
+            if (ComboCountries.SelectedItem != null)
             {
-                if (bestPlayersByPosition.ContainsKey(positionAndSide))
-                {
-                    continue;
-                }
-                bestPlayersByPosition.Add(positionAndSide,
-                    fullSquadWithoutSelectedGk
-                        .Select(p =>
-                            new Tuple<PlayerData, int>(p,
-                                p.GlobalRate * p.Positions[positionAndSide.Key] * p.Sides[positionAndSide.Value]))
-                        .OrderByDescending(p => p.Item2)
-                        .ToDictionary(p => p.Item1, p => p.Item2));
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country == ComboCountries.SelectedItem));
             }
-
-            var linesUp = new ConcurrentDictionary<Dictionary<PlayerData, KeyValuePair<PositionData, SideData>>, int>();
-
-            var start = DateTime.Now;
-            System.Threading.Tasks.Parallel.For(0, _parallelSequences.Count, (int i) =>
+            else
             {
-                var subBestLineUp = new Dictionary<PlayerData, KeyValuePair<PositionData, SideData>>();
-                // NB : the line-up rate doesn't include the GK (it's not required).
-                int subBestLineUpRate = 0;
-
-                foreach (HashSet<int> sequence in _parallelSequences[i])
-                {
-                    var currentLineUp = new Dictionary<PlayerData, KeyValuePair<PositionData, SideData>>();
-                    int currentLineUpRate = 0;
-                    foreach (int tacticTupleIndex in sequence)
-                    {
-                        KeyValuePair<PositionData, SideData> tacticTuple = tactic.PositionAt(tacticTupleIndex);
-
-                        PlayerData pickP = null;
-                        int valueP = -1;
-                        foreach (PlayerData currentP in bestPlayersByPosition[tacticTuple].Keys)
-                        {
-                            if (!currentLineUp.ContainsKey(currentP))
-                            {
-                                pickP = currentP;
-                                valueP = bestPlayersByPosition[tacticTuple][currentP];
-                                break;
-                            }
-                        }
-
-                        if (pickP != null)
-                        {
-                            currentLineUpRate += valueP;
-                        }
-                        currentLineUp.Add(pickP, tacticTuple);
-                    }
-
-                    if (currentLineUpRate > subBestLineUpRate)
-                    {
-                        subBestLineUp = currentLineUp;
-                        subBestLineUpRate = currentLineUpRate;
-                    }
-                }
-
-                if (!linesUp.TryAdd(subBestLineUp, subBestLineUpRate))
-                {
-                    throw new NotImplementedException();
-                }
-            });
-            var end = DateTime.Now;
-
-            System.Diagnostics.Debug.WriteLine("Execution time : " + (end - start).TotalMilliseconds);
-
-            var bestLineUp = linesUp.OrderByDescending(kvp => kvp.Value).First().Key;
-
-            bestLineUp.Add(gkPlayer, new KeyValuePair<PositionData, SideData>(PositionData.GK, SideData.C));
-
-            return bestLineUp;
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances);
+            }
         }
 
-        private static PlayerData GetSquadBestPlayerByPositionAndSide(IEnumerable<PlayerData> squad, PositionData position, SideData side)
-        {
-            return squad
-                .Where(p => p.Positions[position] >= Constants.THRESHOLD_RATE
-                    && (position == PositionData.GK || p.Sides[side] >= Constants.THRESHOLD_RATE))
-                .OrderByDescending(p => p.GlobalRate * p.Positions[position] * (position == PositionData.GK ? 20 : p.Sides[side]))
-                .FirstOrDefault();
-        }
-
-        private void AddPlayerToFieldGrid(PlayerData p, int row, int col)
-        {
-            var e = new Ellipse
-            {
-                Fill = Brushes.Yellow,
-                Width = 70,
-                Height = 70,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            var t = new TextBlock
-            {
-                Text = p?.FullName ?? Constants.DISPLAY_FIELD_NO_PLAYER,
-                TextWrapping = TextWrapping.WrapWithOverflow,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                VerticalAlignment = VerticalAlignment.Center
-            };
-
-            e.SetValue(Grid.RowProperty, row);
-            e.SetValue(Grid.ColumnProperty, col);
-            e.SetValue(Panel.ZIndexProperty, 1);
-            t.SetValue(Grid.RowProperty, row);
-            t.SetValue(Grid.ColumnProperty, col);
-            t.SetValue(Panel.ZIndexProperty, 2);
-
-            FieldGrid.Children.Add(e);
-            FieldGrid.Children.Add(t);
-        }
+        #endregion Events
     }
 }
