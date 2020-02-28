@@ -77,6 +77,18 @@ namespace NewCmExplorer.Data
                         reader.Get<byte>("is_EU") > 0);
                 });
 
+            SetList("competition_club",
+                new[] { "ID", "Name3", "ShortName", "Reputation", "ContinentID", "NationID" },
+                (SqlDataReader reader) =>
+                {
+                    return new ClubCompetitionData(reader.Get<int>("ID"),
+                        reader.Get<string>("Name3"),
+                        reader.Get<string>("ShortName"),
+                        reader.Get<int>("Reputation"),
+                        ConfederationData.GetByid(reader.Get<int>("ContinentID")),
+                        CountryData.GetByid(reader.Get<int>("NationID")));
+                });
+
             SetList("club",
                 new[] { "ID", "ShortName", "LongName", "NationID", "Reputation", "Facilities", "DivisionID", "Bank" },
                 (SqlDataReader reader) =>
@@ -87,7 +99,7 @@ namespace NewCmExplorer.Data
                         CountryData.GetByid(reader.Get<int?>("NationID")),
                         reader.Get<int>("Reputation"),
                         reader.Get<int>("Facilities"),
-                        reader.Get<int?>("DivisionID"),
+                        ClubCompetitionData.GetByid(reader.Get<int?>("DivisionID")),
                         reader.Get<int>("Bank"));
                 });
 

@@ -150,7 +150,7 @@ namespace NewCmExplorer
         private static ListCollectionView GetListCollectionView(IEnumerable<ClubData> baseList)
         {
             ListCollectionView lcv = new ListCollectionView(baseList.ToList());
-            lcv.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ClubData.DivisionId)));
+            lcv.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ClubData.Division) + "." + nameof(ClubCompetitionData.ShortName)));
             return lcv;
         }
 
@@ -226,12 +226,12 @@ namespace NewCmExplorer
             if (ComboConfederations.SelectedItem != null)
             {
                 ComboCountries.ItemsSource = CountryData.Instances.Where(c => c.Confederation == ComboConfederations.SelectedItem);
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country?.Confederation == ComboConfederations.SelectedItem));
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country?.Confederation == ComboConfederations.SelectedItem).OrderByDescending(c => c.Division?.Reputation ?? 0));
             }
             else
             {
                 ComboCountries.ItemsSource = CountryData.Instances;
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances);
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.OrderByDescending(c => c.Division?.Reputation ?? 0));
             }
         }
 
@@ -239,11 +239,11 @@ namespace NewCmExplorer
         {
             if (ComboCountries.SelectedItem != null)
             {
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country == ComboCountries.SelectedItem));
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country == ComboCountries.SelectedItem).OrderByDescending(c => c.Division?.Reputation ?? 0));
             }
             else
             {
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances);
+                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.OrderByDescending(c => c.Division?.Reputation ?? 0));
             }
         }
 

@@ -40,9 +40,9 @@ namespace NewCmExplorer.Data
         public int Bank { get; private set; }
 
         /// <summary>
-        /// Division identifier.
+        /// Division.
         /// </summary>
-        public int? DivisionId { get; private set; }
+        public ClubCompetitionData Division { get; private set; }
 
         /// <summary>
         /// Constructor.
@@ -53,17 +53,17 @@ namespace NewCmExplorer.Data
         /// <param name="country"><see cref="Country"/></param>
         /// <param name="reputation"><see cref="Reputation"/></param>
         /// <param name="facilities"><see cref="Facilities"/></param>
-        /// <param name="divisionId"><see cref="DivisionId"/></param>
+        /// <param name="division"><see cref="Division"/></param>
         /// <param name="bank"><see cref="Bank"/></param>
         internal ClubData(int id, string shortName, string name, CountryData country,
-            int reputation, int facilities, int? divisionId, int bank) : base(id)
+            int reputation, int facilities, ClubCompetitionData division, int bank) : base(id)
         {
             ShortName = shortName;
             Name = name;
             Country = country;
             Reputation = reputation;
             Facilities = facilities;
-            DivisionId = divisionId;
+            Division = division;
             Bank = bank;
         }
 
