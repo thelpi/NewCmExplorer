@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -24,10 +23,14 @@ namespace NewCmExplorer
         {
             InitializeComponent();
 
-            BackgroundWorker worker = new BackgroundWorker();
+            BackgroundWorker worker = new BackgroundWorker
+            {
+                WorkerReportsProgress = true,
+                WorkerSupportsCancellation = false
+            };
             worker.DoWork += delegate (object sender, DoWorkEventArgs e)
             {
-                DataMapper.Instance.LoadStaticDatas();
+                DataMapper.Instance.LoadStaticDatas(worker);
             };
             worker.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
             {
@@ -38,12 +41,18 @@ namespace NewCmExplorer
                 ComboConfederations.DisplayMemberPath = nameof(ConfederationData.ContName);
                 ComboCountries.ItemsSource = CountryData.Instances;
                 ComboCountries.DisplayMemberPath = nameof(CountryData.ShortName);
+                ComboDivision.DisplayMemberPath = nameof(ClubCompetitionData.ShortName);
+                ComboDivision.ItemsSource = ClubCompetitionData.Instances;
                 ComboClubs.DisplayMemberPath = nameof(ClubData.ShortName);
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances);
+                ComboClubs.ItemsSource = ClubData.Instances;
                 ComboTactics.ItemsSource = TacticData.DefaultTactics;
                 ComboTactics.DisplayMemberPath = nameof(TacticData.Name);
                 FullStaff.ItemsSource = PlayerData.Instances;
                 FullStaff.DisplayMemberPath = nameof(PlayerData.FullName);
+            };
+            worker.ProgressChanged += delegate (object sender, ProgressChangedEventArgs e)
+            {
+                LoadingProgressBar.Value = e.ProgressPercentage;
             };
             worker.RunWorkerAsync();
         }
@@ -70,12 +79,20 @@ namespace NewCmExplorer
 
             MainPanel.IsEnabled = false;
             PanelProgress.Visibility = Visibility.Visible;
-            BackgroundWorker worker = new BackgroundWorker();
+            BackgroundWorker worker = new BackgroundWorker
+            {
+                WorkerReportsProgress = true,
+                WorkerSupportsCancellation = false
+            };
             worker.DoWork += delegate (object sender, DoWorkEventArgs e)
             {
                 object[] arguments = e.Argument as object[];
                 DataMapper.Instance.LoadPlayers((ClubData)(arguments[0]));
-                e.Result = DataMapper.Instance.BestLineUpForTactic((TacticData)(arguments[1]));
+                e.Result = DataMapper.Instance.BestLineUpForTactic((TacticData)(arguments[1]), worker);
+            };
+            worker.ProgressChanged += delegate (object sender, ProgressChangedEventArgs e)
+            {
+                LoadingProgressBar.Value = e.ProgressPercentage;
             };
             worker.RunWorkerCompleted += delegate (object sender, RunWorkerCompletedEventArgs e)
             {
@@ -145,13 +162,6 @@ namespace NewCmExplorer
                 default:
                     throw new NotImplementedException();
             }
-        }
-
-        private static ListCollectionView GetListCollectionView(IEnumerable<ClubData> baseList)
-        {
-            ListCollectionView lcv = new ListCollectionView(baseList.ToList());
-            lcv.GroupDescriptions.Add(new PropertyGroupDescription(nameof(ClubData.Division) + "." + nameof(ClubCompetitionData.ShortName)));
-            return lcv;
         }
 
         private int GetGridColumnFromSide(Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> lineUp,
@@ -226,12 +236,14 @@ namespace NewCmExplorer
             if (ComboConfederations.SelectedItem != null)
             {
                 ComboCountries.ItemsSource = CountryData.Instances.Where(c => c.Confederation == ComboConfederations.SelectedItem);
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country?.Confederation == ComboConfederations.SelectedItem).OrderByDescending(c => c.Division?.Reputation ?? 0));
+                ComboDivision.ItemsSource = ClubCompetitionData.Instances.Where(c => c.Confederation == ComboConfederations.SelectedItem);
+                ComboClubs.ItemsSource = ClubData.Instances.Where(c => c.Country?.Confederation == ComboConfederations.SelectedItem);
             }
             else
             {
                 ComboCountries.ItemsSource = CountryData.Instances;
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.OrderByDescending(c => c.Division?.Reputation ?? 0));
+                ComboDivision.ItemsSource = ClubCompetitionData.Instances;
+                ComboClubs.ItemsSource = ClubData.Instances;
             }
         }
 
@@ -239,11 +251,25 @@ namespace NewCmExplorer
         {
             if (ComboCountries.SelectedItem != null)
             {
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.Where(c => c.Country == ComboCountries.SelectedItem).OrderByDescending(c => c.Division?.Reputation ?? 0));
+                ComboDivision.ItemsSource = ClubCompetitionData.Instances.Where(c => c.Country == ComboCountries.SelectedItem);
+                ComboClubs.ItemsSource = ClubData.Instances.Where(c => c.Country == ComboCountries.SelectedItem);
             }
             else
             {
-                ComboClubs.ItemsSource = GetListCollectionView(ClubData.Instances.OrderByDescending(c => c.Division?.Reputation ?? 0));
+                ComboDivision.ItemsSource = ClubCompetitionData.Instances;
+                ComboClubs.ItemsSource = ClubData.Instances;
+            }
+        }
+
+        private void ComboDivision_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (ComboDivision.SelectedItem != null)
+            {
+                ComboClubs.ItemsSource = ClubData.Instances.Where(c => c.Division == ComboDivision.SelectedItem);
+            }
+            else
+            {
+                ComboClubs.ItemsSource = ClubData.Instances;
             }
         }
 

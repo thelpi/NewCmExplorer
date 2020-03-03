@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Linq;
 using NewCmExplorer.Properties;
@@ -33,16 +34,15 @@ namespace NewCmExplorer.Data
 
         private List<HashSet<HashSet<int>>> _parallelSequences = new List<HashSet<HashSet<int>>>();
 
-        private DataMapper()
-        {
-            ParseSequencesFileToHashset();
-        }
+        private DataMapper() { }
 
         /// <summary>
         /// Loads static datas.
         /// </summary>
-        internal void LoadStaticDatas()
+        internal void LoadStaticDatas(BackgroundWorker worker)
         {
+            ParseSequencesFileToHashset(worker);
+
             SetList("attribute",
                 new[] {"ID", "name", "type_ID" },
                 (SqlDataReader reader) =>
@@ -236,9 +236,16 @@ namespace NewCmExplorer.Data
             }
         }
 
-        internal void ParseSequencesFileToHashset()
+        private void ParseSequencesFileToHashset(BackgroundWorker worker)
         {
-            string[] rows = Properties.Resources.Sequences.Split(
+            if (_parallelSequences?.Count > 0)
+            {
+                return;
+            }
+
+            _parallelSequences = new List<HashSet<HashSet<int>>>();
+
+            string[] rows = Resources.Sequences.Split(
                 new string[] { "\r\n", "\n", "\r" },
                 StringSplitOptions.RemoveEmptyEntries);
 
@@ -251,6 +258,7 @@ namespace NewCmExplorer.Data
                 {
                     currentHashset = new HashSet<HashSet<int>>();
                     _parallelSequences.Add(currentHashset);
+                    worker.ReportProgress(Convert.ToInt32(i / (decimal)rows.Length * 100));
                 }
 
                 var tmp = new HashSet<int>();
@@ -266,7 +274,7 @@ namespace NewCmExplorer.Data
             }
         }
 
-        internal Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> BestLineUpForTactic(TacticData tactic)
+        internal Dictionary<PlayerData, KeyValuePair<PositionData, SideData>> BestLineUpForTactic(TacticData tactic, BackgroundWorker worker)
         {
             // Assumes the selected goalkeeper can't be a better choice at another position.
             // The side is useless here.
@@ -292,16 +300,23 @@ namespace NewCmExplorer.Data
             }
 
             var linesUp = new ConcurrentDictionary<Dictionary<PlayerData, KeyValuePair<PositionData, SideData>>, int>();
-
-            var start = DateTime.Now;
+            
             System.Threading.Tasks.Parallel.For(0, _parallelSequences.Count, (int i) =>
             {
                 var subBestLineUp = new Dictionary<PlayerData, KeyValuePair<PositionData, SideData>>();
                 // NB : the line-up rate doesn't include the GK (it's not required).
                 int subBestLineUpRate = 0;
 
+                int count = 0;
                 foreach (HashSet<int> sequence in _parallelSequences[i])
                 {
+                    count++;
+
+                    if (count % 10000 == 0 && i == 0)
+                    {
+                        worker.ReportProgress(Convert.ToInt32(count / (decimal)_parallelSequences[i].Count * 100));
+                    }
+
                     var currentLineUp = new Dictionary<PlayerData, KeyValuePair<PositionData, SideData>>();
                     int currentLineUpRate = 0;
                     foreach (int tacticTupleIndex in sequence)
@@ -339,9 +354,6 @@ namespace NewCmExplorer.Data
                     throw new NotImplementedException();
                 }
             });
-            var end = DateTime.Now;
-
-            System.Diagnostics.Debug.WriteLine("Execution time : " + (end - start).TotalMilliseconds);
 
             var bestLineUp = linesUp.OrderByDescending(kvp => kvp.Value).First().Key;
 
@@ -350,7 +362,7 @@ namespace NewCmExplorer.Data
             return bestLineUp;
         }
 
-        internal PlayerData GetSquadBestPlayerByPositionAndSide(IEnumerable<PlayerData> squad, PositionData position, SideData side)
+        private PlayerData GetSquadBestPlayerByPositionAndSide(IEnumerable<PlayerData> squad, PositionData position, SideData side)
         {
             return squad
                 .Where(p => p.Positions[position] >= Constants.THRESHOLD_RATE
