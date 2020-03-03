@@ -184,57 +184,44 @@ namespace NewCmExplorer.Engine
                 conn.Open();
                 using (var cmd = conn.CreateCommand())
                 {
-                    cmd.CommandText = "SELECT [position_ID], [rate] FROM [dbo].[player_position] WHERE [player_ID] = @player";
-                    cmd.Parameters.Add("@player", System.Data.SqlDbType.Int);
-                    cmd.Prepare();
-                    foreach (PlayerData p in PlayerData.Instances)
-                    {
-                        cmd.Parameters["@player"].Value = p.Id;
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                p.SetPosition((PositionData)reader.Get<int>("position_ID"),
-                                    reader.Get<int>("rate"));
-                            }
-                        }
-                    }
-                    
-                    cmd.CommandText = "SELECT [side_ID], [rate] FROM [dbo].[player_side] WHERE [player_ID] = @player";
-                    cmd.Prepare();
-                    foreach (PlayerData p in PlayerData.Instances)
-                    {
-                        cmd.Parameters["@player"].Value = p.Id;
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                p.SetSide((SideData)reader.Get<int>("side_ID"),
-                                    reader.Get<int>("rate"));
-                            }
-                        }
-                    }
+                    cmd.CommandType = System.Data.CommandType.StoredProcedure;
+                    cmd.Parameters.Add("@player", System.Data.SqlDbType.BigInt);
 
-                    cmd.CommandText = "SELECT [attribute_ID], [rate] FROM [dbo].[player_attribute] WHERE [player_ID] = @player";
-                    cmd.Prepare();
-                    foreach (PlayerData p in PlayerData.Instances)
-                    {
-                        cmd.Parameters["@player"].Value = p.Id;
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                p.SetAttribute(AttributeData.GetByid(reader.Get<int>("attribute_ID")),
-                                    reader.Get<int>("rate"));
-                            }
-                        }
-                    }
+                    GetDatasRelativeToPlayer(cmd, "position",
+                        (PlayerData p, PositionData position, int rate) => { p.SetPosition(position, rate); },
+                        (int value) => { return (PositionData)value; });
+
+                    GetDatasRelativeToPlayer(cmd, "side",
+                        (PlayerData p, SideData side, int rate) => { p.SetSide(side, rate); },
+                        (int value) => { return (SideData)value; });
+
+                    GetDatasRelativeToPlayer(cmd, "attribute",
+                        (PlayerData p, AttributeData attribute, int rate) => { p.SetAttribute(attribute, rate); },
+                        (int value) => { return AttributeData.GetByid(value); });
                 }
             }
 
             foreach (PlayerData p in PlayerData.Instances)
             {
                 p.AdjustPositionAndSide();
+            }
+        }
+
+        private static void GetDatasRelativeToPlayer<T>(SqlCommand cmd, string dataType,
+            Action<PlayerData, T, int> setter, Func<int, T> parser)
+        {
+            cmd.CommandText = $"[dbo].[get_player_{dataType}s]";
+            cmd.Prepare();
+            foreach (PlayerData p in PlayerData.Instances)
+            {
+                cmd.Parameters["@player"].Value = p.Id;
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        setter(p, parser(reader.Get<int>($"{dataType}_ID")), reader.Get<int>("rate"));
+                    }
+                }
             }
         }
 
