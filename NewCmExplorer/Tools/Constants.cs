@@ -1,10 +1,17 @@
-﻿namespace NewCmExplorer.Tools
+﻿using System;
+
+namespace NewCmExplorer.Tools
 {
     /// <summary>
     /// Set of constants.
     /// </summary>
     internal static class Constants
     {
+        /// <summary>
+        /// Instance of random numbers generator.
+        /// </summary>
+        internal static readonly Random Randomizer = new Random(DateTime.Now.Millisecond);
+
         /// <summary>
         /// Date pattern for display.
         /// </summary>
@@ -29,5 +36,21 @@
         /// Name of virtual club to represent unemployment.
         /// </summary>
         internal const string NoClubName = "No club";
+        /// <summary>
+        /// Default value for <see cref="Engine.ResultGenerator.HomeAdvantageRate"/>.
+        /// </summary>
+        internal const double DEFAULT_HOME_ADVANTAGE_RATE = 4 / 3;
+        /// <summary>
+        /// Default value for <see cref="Engine.ResultGenerator.DrawRate"/>.
+        /// </summary>
+        internal const double DEFAULT_DRAW_RATE = 0.25;
+        /// <summary>
+        /// Default value for <see cref="Engine.ResultGenerator.GoalsCountMean"/>.
+        /// </summary>
+        internal const double DEFAULT_GOALS_COUNT_MEAN = 2.5;
+        /// <summary>
+        /// Default value for <see cref="Engine.ResultGenerator.GoalsCountDeviation"/>.
+        /// </summary>
+        internal const double DEFAULT_GOALS_COUNT_DEVIATION = 1.5;
     }
 }

@@ -68,6 +68,7 @@
     <Compile Include="Data\ClubCompetitionData.cs" />
     <Compile Include="Data\ClubData.cs" />
     <Compile Include="Data\ConfederationData.cs" />
+    <Compile Include="Engine\ResultGenerator.cs" />
     <Compile Include="Tools\Constants.cs" />
     <Compile Include="Data\CountryData.cs" />
     <Compile Include="Engine\DataMapper.cs" />
