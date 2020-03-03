@@ -54,7 +54,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="MainWindow.xaml">
+    <Page Include="Gui\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
@@ -68,15 +68,15 @@
     <Compile Include="Data\ClubCompetitionData.cs" />
     <Compile Include="Data\ClubData.cs" />
     <Compile Include="Data\ConfederationData.cs" />
-    <Compile Include="Data\Constants.cs" />
+    <Compile Include="Tools\Constants.cs" />
     <Compile Include="Data\CountryData.cs" />
-    <Compile Include="Data\DataMapper.cs" />
-    <Compile Include="Data\Extensions.cs" />
+    <Compile Include="Engine\DataMapper.cs" />
+    <Compile Include="Tools\Extensions.cs" />
     <Compile Include="Data\PlayerData.cs" />
     <Compile Include="Data\PositionData.cs" />
     <Compile Include="Data\SideData.cs" />
     <Compile Include="Data\TacticData.cs" />
-    <Compile Include="MainWindow.xaml.cs">
+    <Compile Include="Gui\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>

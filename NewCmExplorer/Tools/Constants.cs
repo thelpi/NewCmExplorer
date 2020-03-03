@@ -1,4 +1,4 @@
-﻿namespace NewCmExplorer.Data
+﻿namespace NewCmExplorer.Tools
 {
     /// <summary>
     /// Set of constants.

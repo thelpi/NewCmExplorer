@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SqlClient;
 using System.Linq;
+using NewCmExplorer.Data;
 using NewCmExplorer.Properties;
+using NewCmExplorer.Tools;
 
-namespace NewCmExplorer.Data
+namespace NewCmExplorer.Engine
 {
     /// <summary>
     /// Data mapper.

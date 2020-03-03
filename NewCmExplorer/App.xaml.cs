@@ -1,17 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using System.Windows;
 
 namespace NewCmExplorer
 {
     /// <summary>
-    /// Logique d'interaction pour App.xaml
+    /// Interaction logic for App.xaml
     /// </summary>
+    /// <seealso cref="Application"/>
     public partial class App : Application
     {
+        private void Application_Startup(object sender, StartupEventArgs e)
+        {
+            new Gui.MainWindow().ShowDialog();
+        }
     }
 }
